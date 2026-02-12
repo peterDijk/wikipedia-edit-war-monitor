@@ -1,4 +1,0 @@
-[0m[[0m[0mdebug[0m] [0m[0m> Exec(run, Some(fefc940a-02ed-4e09-bbef-cbd08f203ecc), Some(CommandSource(console0)))[0m
-[0m[[0m[0mdebug[0m] [0m[0mEvaluating tasks: Compile / run[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning task... Cancel: Signal, check cycles: false, forcegc: true[0m
-[0m[[0m[0minfo[0m] [0m[0mcompiling 5 Scala sources to /Users/peter.van.dijk/sideprojects/wikipedia-edit-war-monitor/target/scala-3.3.1/classes ...[0m
