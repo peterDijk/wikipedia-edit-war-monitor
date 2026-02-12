@@ -1,6 +1,6 @@
 val Http4sVersion = "0.23.32"
 val MunitVersion = "0.7.29"
-val LogbackVersion = "1.2.6"
+val LogbackVersion = "1.4.14"
 val MunitCatsEffectVersion = "1.0.6"
 
 lazy val root = (project in file("."))
@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
     organization := "io.github.peterdijk",
     name := "wikipedia-edit-war-monitor",
     version := "0.0.1-SNAPSHOT",
-    scalaVersion := "3.1.0",
+    scalaVersion := "3.3.1",
     libraryDependencies ++= Seq(
       "org.http4s"      %% "http4s-ember-server" % Http4sVersion,
       "org.http4s"      %% "http4s-ember-client" % Http4sVersion,
