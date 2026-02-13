@@ -3,7 +3,7 @@
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
     <profile name="sbt 1" modules="wikipedia-edit-war-monitor,wikipedia-edit-war-monitor_3433,wikipedia-edit-war-monitor_3433.main,wikipedia-edit-war-monitor_3433.test" />
-    <profile name="sbt 3" modules="wikipedia-edit-war-monitor.main,wikipedia-edit-war-monitor.test">
+    <profile name="sbt 2" modules="wikipedia-edit-war-monitor.main,wikipedia-edit-war-monitor.test">
       <option name="implicitConversions" value="true" />
       <option name="higherKinds" value="true" />
       <option name="macros" value="true" />
@@ -22,6 +22,7 @@
         <parameter value="-Wunused:params" />
         <parameter value="-Wunused:privates" />
         <parameter value="-Xfatal-warnings" />
+        <parameter value="-Wconf:cat=unused:s" />
       </parameters>
     </profile>
   </component>

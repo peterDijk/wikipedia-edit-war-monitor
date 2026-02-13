@@ -30,7 +30,8 @@ object WikipediaEditWarMonitorServer:
       val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
       // Start the Wikipedia SSE stream as a background fiber
-      Async[F].start(wikiAlgebra.streamEvents) *>
+      val backgroundFiber = Async[F].start(wikiAlgebra.streamEvents)
+      backgroundFiber *>
         EmberServerBuilder.default[F]
           .withHost(ipv4"0.0.0.0")
           .withPort(port"8080")

@@ -23,6 +23,9 @@ lazy val root = (project in file("."))
       "org.fusesource.jansi" % "jansi"           % JansiVersion,
     ),
     testFrameworks += new TestFramework("munit.Framework"),
+    scalacOptions ++= Seq(
+      "-Wconf:cat=unused:s",  // Silence all unused warnings (imports, values, params, etc.)
+    ),
     Compile / run / fork := true,
     // Enable color support in forked JVM
     Compile / run / javaOptions ++= Seq(
