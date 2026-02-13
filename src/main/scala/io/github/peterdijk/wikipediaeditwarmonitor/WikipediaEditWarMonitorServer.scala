@@ -23,15 +23,17 @@ object WikipediaEditWarMonitorServer:
       // in the underlying routes.
       val httpApp = (
         WikipediaEditWarMonitorRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        WikipediaEditWarMonitorRoutes.jokeRoutes[F](jokeAlg)
+          WikipediaEditWarMonitorRoutes.jokeRoutes[F](jokeAlg)
       ).orNotFound
 
       // With Middlewares in place
       val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
       // Start the Wikipedia SSE stream as a background fiber
-      Async[F].start(wikiAlgebra.streamEvents) *>
-        EmberServerBuilder.default[F]
+      val backgroundFiber = Async[F].start(wikiAlgebra.streamEvents)
+      backgroundFiber *>
+        EmberServerBuilder
+          .default[F]
           .withHost(ipv4"0.0.0.0")
           .withPort(port"8080")
           .withHttpApp(finalHttpApp)
