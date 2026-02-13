@@ -12,28 +12,30 @@ import org.http4s.server.middleware.Logger
 object WikipediaEditWarMonitorServer:
 
   def run[F[_]: Async: Network]: F[Nothing] = {
-    for {
-      client <- EmberClientBuilder.default[F].build
-      helloWorldAlg = HelloWorld.impl[F]
-      jokeAlg = Jokes.impl[F](client)
+    EmberClientBuilder.default[F].build.use { client =>
+      val wikiAlgebra = WikiSource.impl[F](client)
+      val helloWorldAlg = HelloWorld.impl[F]
+      val jokeAlg = Jokes.impl[F](client)
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you
       // want to extract a segments not checked
       // in the underlying routes.
-      httpApp = (
+      val httpApp = (
         WikipediaEditWarMonitorRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
         WikipediaEditWarMonitorRoutes.jokeRoutes[F](jokeAlg)
       ).orNotFound
 
       // With Middlewares in place
-      finalHttpApp = Logger.httpApp(true, true)(httpApp)
+      val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
-      _ <- 
+      // Start the Wikipedia SSE stream as a background fiber
+      Async[F].start(wikiAlgebra.streamEvents) *>
         EmberServerBuilder.default[F]
           .withHost(ipv4"0.0.0.0")
           .withPort(port"8080")
           .withHttpApp(finalHttpApp)
           .build
-    } yield ()
-  }.useForever
+          .useForever
+    }
+  }
