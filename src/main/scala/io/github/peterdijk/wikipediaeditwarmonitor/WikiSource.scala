@@ -3,6 +3,7 @@ package io.github.peterdijk.wikipediaeditwarmonitor
 import cats.effect.{Async, Concurrent, Ref}
 import cats.implicits.*
 
+import fs2.Stream
 import org.http4s.*
 import org.http4s.implicits.*
 import org.http4s.client.Client
@@ -32,7 +33,7 @@ object WikiSource:
     import dsl.*
 
     // Parse SSE events with id and data fields.
-    def processResponseLines(response: Response[F]): fs2.Stream[F, SSEEvent] =
+    def processResponseLines(response: Response[F]): Stream[F, SSEEvent] =
       response.body
         .through(fs2.text.utf8.decode)
         .through(fs2.text.lines)
@@ -40,6 +41,16 @@ object WikiSource:
         .split(_.isEmpty) // Split on blank lines (event boundaries)
         .map { lines =>
           var eventId: Option[String] = None
+          /* List.newBuilder[String] is used for performance - it's the efficient way to build
+          a List when you don't know the size upfront and need to add elements imperatively.
+          List.empty + append line creates and returns a new list each time. Infefficient.
+          // Efficient - O(1) per addition
+            val dataLines = List.newBuilder[String]
+            lines.foreach { line =>
+              dataLines += line  // O(1) - just adds to internal buffer
+            }
+            val result = dataLines.result()  // O(n) - builds final list once
+           */
           val dataLines = List.newBuilder[String]
 
           lines.foreach { line =>
@@ -69,7 +80,7 @@ object WikiSource:
           firstStartTime: Option[FiniteDuration],
           firstCounter: Option[Ref[F, Int]],
           lastEventId: Option[String]
-      ): fs2.Stream[F, Unit] =
+      ): Stream[F, Unit] =
         val request = lastEventId match
           case Some(eventId) =>
             GET(
@@ -80,13 +91,13 @@ object WikiSource:
             GET(uri"https://stream.wikimedia.org/v2/stream/recentchange")
 
         for {
-          startTime <- fs2.Stream.eval(
+          startTime <- Stream.eval(
             firstStartTime.fold(Async[F].monotonic)(Async[F].pure)
           )
-          counterRef <- fs2.Stream.eval(
+          counterRef <- Stream.eval(
             firstCounter.fold(Ref[F].of(0))(Async[F].pure)
           )
-          lastIdRef <- fs2.Stream.eval(Ref[F].of(lastEventId))
+          lastIdRef <- Stream.eval(Ref[F].of(lastEventId))
           _ <- client
             .stream(request)
             .flatMap { response =>
@@ -105,7 +116,7 @@ object WikiSource:
                 )
             }
             .handleErrorWith { _ =>
-              fs2.Stream.eval(lastIdRef.get).flatMap { lastId =>
+              Stream.eval(lastIdRef.get).flatMap { lastId =>
                 makeStream(
                   retries + 1,
                   Some(startTime),

@@ -1,0 +1,30 @@
+event: message
+id: [{"topic":"eqiad.mediawiki.recentchange","partition":0,"offset":-1},{"topic":"codfw.mediawiki.recentchange","partition":0,"timestamp":1771069832317}]
+data: {
+  "$schema":"/mediawiki/recentchange/1.0.0",
+  "meta":{
+    "uri":"https://commons.wikimedia.org/wiki/Category:CC-BY-4.0",
+    "request_id":"fa6eafc3-33cb-46d9-a721-afb217379918",
+    "id":"5ce3a9de-3e06-48c2-bf60-b55330063f6f",
+    "domain":"commons.wikimedia.org",
+    "stream":"mediawiki.recentchange",
+    "dt":"2026-02-14T11:50:32.316Z",
+    "topic":"codfw.mediawiki.recentchange",
+    "partition":0,
+    "offset":1979945767
+  },
+    "id":3196239272,
+    "type":"categorize",
+    "namespace":14,"
+    title":"Category:CC-BY-4.0",
+    "title_url":"https://commons.wikimedia.org/wiki/Category:CC-BY-4.0",
+    "comment":"[[:File:Bridge over Petrovsky Canal 04.jpg]] added to category",
+    "timestamp":1771069831,
+    "user":"MBH",
+    "bot":false,
+    "notify_url":"https://commons.wikimedia.org/w/index.php?diff=1165487913&oldid=0&rcid=3196239272","server_url":"https://commons.wikimedia.org",
+    "server_name":"commons.wikimedia.org",
+    "server_script_path":"/w",
+    "wiki":"commonswiki",
+    "parsedcomment":"<a href=\"/wiki/File:Bridge_over_Petrovsky_Canal_04.jpg\" title=\"File:Bridge over Petrovsky Canal 04.jpg\">File:Bridge over Petrovsky Canal 04.jpg</a> added to category"
+    }
