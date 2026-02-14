@@ -8,6 +8,7 @@ import org.http4s.implicits.*
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.Method.*
+import org.typelevel.ci.CIStringSyntax
 import scala.concurrent.duration.FiniteDuration
 
 trait WikiSource[F[_]]:
@@ -18,45 +19,66 @@ object WikiSource:
 
   private final case class WikiStreamError(e: Throwable)
       extends RuntimeException
+  case class SSEEvent(id: Option[String], data: String)
 
   /*
   In Scala 3, when you write new WikiSource[F]:, it's creating an anonymous class that
   implements the trait. This is valid syntax - the colon (:) after the trait name
   indicates that the implementation follows using indentation-based syntax.
    */
+
   def impl[F[_]: Async](client: Client[F]): WikiSource[F] = new WikiSource[F]:
     val dsl: Http4sClientDsl[F] = new Http4sClientDsl[F] {}
     import dsl.*
 
-    def processResponseLines(response: Response[F]): fs2.Stream[F, String] =
+    // Parse SSE events with id and data fields.
+    def processResponseLines(response: Response[F]): fs2.Stream[F, SSEEvent] =
       response.body
         .through(fs2.text.utf8.decode)
         .through(fs2.text.lines)
-        .filter(_.nonEmpty) // Filter out empty lines
         .filter(!_.startsWith(":")) // Filter out SSE comment lines (heartbeats)
-        .filter(_.startsWith("data: ")) // Only process data lines
-        .map(_.stripPrefix("data: "))
+        .split(_.isEmpty) // Split on blank lines (event boundaries)
+        .map { lines =>
+          var eventId: Option[String] = None
+          val dataLines = List.newBuilder[String]
+
+          lines.foreach { line =>
+            if line.startsWith("id: ") then
+              eventId = Some(line.stripPrefix("id: ").trim)
+            else if line.startsWith("data: ") then
+              dataLines += line.stripPrefix("data: ")
+          }
+
+          SSEEvent(eventId, dataLines.result().mkString("\n"))
+        }
+        .filter(_.data.nonEmpty) // Only emit events with data
 
     // TODO: make into Decoder
     def formatOutput(
         count: Int,
         retries: Int,
         elapsedTime: FiniteDuration,
-        line: String
+        event: SSEEvent
     ) = println(
-      s"Event #$count | retries: $retries (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | Line: ${line.take(80)}"
+      s"Event #$count | retries: $retries | id: ${event.id.getOrElse("none")} (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | Data: ${event.data.take(80)}"
     )
 
     def streamEvents: F[Unit] =
-      val request = GET(
-        uri"https://stream.wikimedia.org/v2/stream/recentchange"
-      )
-
       def makeStream(
           retries: Int,
           firstStartTime: Option[FiniteDuration],
-          firstCounter: Option[Ref[F, Int]]
+          firstCounter: Option[Ref[F, Int]],
+          lastEventId: Option[String]
       ): fs2.Stream[F, Unit] =
+        val request = lastEventId match
+          case Some(eventId) =>
+            GET(
+              uri"https://stream.wikimedia.org/v2/stream/recentchange",
+              Header.Raw(ci"Last-Event-Id", eventId)
+            )
+          case None =>
+            GET(uri"https://stream.wikimedia.org/v2/stream/recentchange")
+
         for {
           startTime <- fs2.Stream.eval(
             firstStartTime.fold(Async[F].monotonic)(Async[F].pure)
@@ -64,23 +86,34 @@ object WikiSource:
           counterRef <- fs2.Stream.eval(
             firstCounter.fold(Ref[F].of(0))(Async[F].pure)
           )
+          lastIdRef <- fs2.Stream.eval(Ref[F].of(lastEventId))
           _ <- client
             .stream(request)
             .flatMap { response =>
               processResponseLines(response)
-                .parEvalMap(1)(line =>
+                .parEvalMap(1)(event =>
                   for {
+                    _ <- event.id.fold(Async[F].unit)(id =>
+                      lastIdRef.set(Some(id))
+                    )
                     count <- counterRef.updateAndGet(_ + 1)
                     currentTime <- Async[F].monotonic
                     elapsedTime = currentTime - startTime
                     _ <- Concurrent[F]
-                      .delay(formatOutput(count, retries, elapsedTime, line))
+                      .delay(formatOutput(count, retries, elapsedTime, event))
                   } yield ()
                 )
             }
             .handleErrorWith { _ =>
-              makeStream(retries + 1, Some(startTime), Some(counterRef))
+              fs2.Stream.eval(lastIdRef.get).flatMap { lastId =>
+                makeStream(
+                  retries + 1,
+                  Some(startTime),
+                  Some(counterRef),
+                  lastId
+                )
+              }
             }
         } yield ()
 
-      makeStream(0, None, None).compile.drain
+      makeStream(0, None, None, None).compile.drain
