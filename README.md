@@ -160,4 +160,10 @@ docker run --rm --name jaeger \                                                 
   cr.jaegertracing.io/jaegertracing/jaeger:2.15.0
 ```
 2. Start the app
-3. Open http://localhost:16686/ in your browser
+You can set the service name using the `OTEL_SERVICE_NAME` environment variable:
+```shell
+OTEL_SERVICE_NAME=wikipedia-edit-war-monitor sbt run
+```
+or set the environment variable in your build settings by default.
+
+3. Open http://localhost:16686/ in your browser to view traces.
