@@ -1,0 +1,39 @@
+package io.github.peterdijk.wikipediaeditwarmonitor
+
+import fs2.concurrent.Topic
+import fs2.Stream
+import org.http4s.ServerSentEvent
+import cats.effect.{Async, Ref}
+import cats.syntax.all._
+import scala.concurrent.duration.FiniteDuration
+
+final case class WikiEventLogger[F[_]: Async](
+    broadcastHub: Topic[F, ServerSentEvent]
+):
+  // TODO: make into Decoder
+  private def formatOutput(
+      count: Int,
+      elapsedTime: FiniteDuration,
+      event: ServerSentEvent
+  ) = println(
+    s"Event #$count | (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | Data: ${event.data.mkString("\n").take(80)}"
+  )
+
+  def subscribeAndLog: F[Unit] =
+    val stream = broadcastHub.subscribe(1000)
+
+    val counters = for {
+      startTime <- Stream.eval(Async[F].monotonic)
+      counterRef <- Stream.eval(Ref[F].of(0))
+      _ <- stream.parEvalMap(10) { event =>
+        for {
+          currentTime <- Async[F].monotonic
+          count <- counterRef.updateAndGet(_ + 1)
+          elapsedTime = currentTime - startTime
+          _ <- Async[F].delay(
+            formatOutput(count, elapsedTime, event)
+          )
+        } yield ()
+      }
+    } yield ()
+    counters.compile.drain

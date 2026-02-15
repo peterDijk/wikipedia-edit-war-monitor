@@ -36,7 +36,7 @@ object WikiSource:
     import dsl.*
 
     // Parse SSE events with id and data fields.
-    def processResponseLines(response: Response[F]): Stream[F, SSEEvent] =
+    def processResponse(response: Response[F]): Stream[F, SSEEvent] =
       response.body
         .through((input: Stream[F, Byte]) => {
           fs2.text.utf8.decode(input)
@@ -78,7 +78,7 @@ object WikiSource:
         elapsedTime: FiniteDuration,
         event: SSEEvent
     ) = println(
-      s"Event #$count | retries: $retries | id: ${event.id.getOrElse("none")} (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | Data: ${event.data.take(80)}"
+      s"Event #$count | retries: $retries (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | Data: ${event.data.take(80)}"
     )
 
     def streamEvents: F[Unit] =
@@ -108,19 +108,18 @@ object WikiSource:
           _ <- client
             .stream(request)
             .flatMap { response =>
-              processResponseLines(response)
-                .parEvalMap(1)(
-                  event => // is there still backpressure if its places after processResponseLines?
-                    for {
-                      _ <- event.id.fold(Async[F].unit)(id =>
-                        lastIdRef.set(Some(id))
-                      )
-                      count <- counterRef.updateAndGet(_ + 1)
-                      currentTime <- Async[F].monotonic
-                      elapsedTime = currentTime - startTime
-                      _ <- Concurrent[F]
-                        .delay(formatOutput(count, retries, elapsedTime, event))
-                    } yield ()
+              processResponse(response)
+                .parEvalMap(2)(event =>
+                  for {
+                    _ <- event.id.fold(Async[F].unit)(id =>
+                      lastIdRef.set(Some(id))
+                    )
+                    count <- counterRef.updateAndGet(_ + 1)
+                    currentTime <- Async[F].monotonic
+                    elapsedTime = currentTime - startTime
+                    _ <- Concurrent[F]
+                      .delay(formatOutput(count, retries, elapsedTime, event))
+                  } yield ()
                 )
             }
             .handleErrorWith { _ =>
