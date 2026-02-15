@@ -5,6 +5,9 @@ import cats.implicits.*
 
 import fs2.Stream
 import org.http4s.*
+// TODO: use http4s.ServerSentEvent
+// for example: https://gist.github.com/izeigerman/09cf83a44a590e734873e552ae060fc4
+// import org.http4s.ServerSentEvent
 import org.http4s.implicits.*
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
