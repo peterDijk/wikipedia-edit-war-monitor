@@ -2,16 +2,7 @@ package io.github.peterdijk.wikipediaeditwarmonitor
 
 import io.circe.Decoder.Result
 import io.circe.{Decoder, HCursor}
-
-case class WikiEdit(
-    id: String,
-    title: String,
-    user: String,
-    bot: Boolean,
-    timestamp: Long,
-    comment: String,
-    serverName: String
-)
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
 
 object WikiDecoder {
   given wikiEditDecoder: Decoder[WikiEdit] = new Decoder[WikiEdit] {

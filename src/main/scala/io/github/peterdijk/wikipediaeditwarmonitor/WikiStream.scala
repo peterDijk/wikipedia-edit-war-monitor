@@ -8,6 +8,7 @@ import org.http4s.ServerSentEvent
 import fs2.concurrent.Topic
 
 // For the Decoder
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
 import WikiDecoder.given
 import io.circe.jawn.decode
 
@@ -41,7 +42,7 @@ object WikiStream:
         .stream(
           uri"https://stream.wikimedia.org/v2/stream/recentchange"
         )
-        .through(sseEventToWikiEdit[F])
+        .through(sseEventToWikiEdit)
         .through(broadcastHub.publish)
         .compile
         .drain

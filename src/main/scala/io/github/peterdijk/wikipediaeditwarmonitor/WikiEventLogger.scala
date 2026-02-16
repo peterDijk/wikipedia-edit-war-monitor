@@ -6,10 +6,12 @@ import cats.effect.{Async, Ref}
 import cats.syntax.all._
 import scala.concurrent.duration.FiniteDuration
 
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
+
 final case class WikiEventLogger[F[_]: Async](
     broadcastHub: Topic[F, WikiEdit]
 ):
-  // TODO: make into Decoder
+
   private def formatOutput(
       count: Int,
       elapsedTime: FiniteDuration,
