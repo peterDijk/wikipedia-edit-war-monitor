@@ -26,7 +26,7 @@
 **Sink Layer:**
 
 - **Redis/Postgres:** Persistent storage for "Most Edited Pages of the Hour" from The Counter.
-- **Console Dashboard:** Real-time display of Bot vs Human activity statistics and trending pages.
+- **Console Dashboard:** Real-time display of Bot vs Human activity statistics and trending pages. Endpoint providing dashboard stats. Possibly push updates over Websocket if we have time. Build (let AI build a Frontend)
 - **Alert Queue:** Bounded `fs2.concurrent.Queue` that buffers edit war alerts with backpressure, decoupling detection from downstream alerting.
 - **Slack/Discord Webhook (Optional):** Human notification channel for high-priority edit war alerts, drained from the Alert Queue with rate limiting.
 

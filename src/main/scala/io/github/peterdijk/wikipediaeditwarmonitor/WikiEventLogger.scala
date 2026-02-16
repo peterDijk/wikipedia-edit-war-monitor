@@ -2,21 +2,22 @@ package io.github.peterdijk.wikipediaeditwarmonitor
 
 import fs2.concurrent.Topic
 import fs2.Stream
-import org.http4s.ServerSentEvent
 import cats.effect.{Async, Ref}
 import cats.syntax.all._
 import scala.concurrent.duration.FiniteDuration
 
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
+
 final case class WikiEventLogger[F[_]: Async](
-    broadcastHub: Topic[F, ServerSentEvent]
+    broadcastHub: Topic[F, WikiEdit]
 ):
-  // TODO: make into Decoder
+
   private def formatOutput(
       count: Int,
       elapsedTime: FiniteDuration,
-      event: ServerSentEvent
+      event: WikiEdit
   ) = println(
-    s"Event #$count | (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | Data: ${event.data.mkString("\n").take(80)}"
+    s"Event #$count | (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | WikiEdit: ${event.title} by ${event.user} at ${event.timestamp}"
   )
 
   def subscribeAndLog: F[Unit] =
@@ -26,14 +27,10 @@ final case class WikiEventLogger[F[_]: Async](
       startTime <- Stream.eval(Async[F].monotonic)
       counterRef <- Stream.eval(Ref[F].of(0))
       _ <- stream.parEvalMap(10) { event =>
-        for {
-          currentTime <- Async[F].monotonic
-          count <- counterRef.updateAndGet(_ + 1)
-          elapsedTime = currentTime - startTime
-          _ <- Async[F].delay(
-            formatOutput(count, elapsedTime, event)
-          )
-        } yield ()
+        (Async[F].monotonic, counterRef.updateAndGet(_ + 1)).mapN {
+          (currentTime, count) =>
+            formatOutput(count, currentTime - startTime, event)
+        }
       }
     } yield ()
     log.compile.drain

@@ -7,23 +7,42 @@ import scala.concurrent.duration.*
 import org.http4s.ServerSentEvent
 import fs2.concurrent.Topic
 
+// For the Decoder
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
+import WikiDecoder.given
+import io.circe.jawn.decode
+
 trait WikiStream[F[_]]:
   def start: F[Unit]
 
 object WikiStream:
   def apply[F[_]](implicit evidence: WikiStream[F]): WikiStream[F] = evidence
 
+  def sseEventToWikiEdit[F[_]: Async]: fs2.Pipe[F, ServerSentEvent, WikiEdit] =
+    (stream: fs2.Stream[F, ServerSentEvent]) =>
+      stream.evalMap { sse =>
+        val decoded = decode[WikiEdit](sse.data.mkString("\n"))
+        Async[F].fromEither(
+          decoded.left.map(err =>
+            new RuntimeException(
+              s"Failed to decode SSE data: ${sse.data.mkString("\n")}",
+              err
+            )
+          )
+        )
+      }
+
   def impl[F[_]: Async](
       httpClient: Client[F],
-      broadcastHub: Topic[F, ServerSentEvent]
-  ): WikiStream[F] =
-    new WikiStream[F]:
-      def start: F[Unit] =
-        val sseClient = SseClient(httpClient, None, 1.second)
-        sseClient
-          .stream(
-            uri"https://stream.wikimedia.org/v2/stream/recentchange"
-          )
-          .through(broadcastHub.publish)
-          .compile
-          .drain
+      broadcastHub: Topic[F, WikiEdit]
+  ): WikiStream[F] = new WikiStream[F]:
+    def start: F[Unit] =
+      val sseClient = SseClient(httpClient, None, 1.second)
+      sseClient
+        .stream(
+          uri"https://stream.wikimedia.org/v2/stream/recentchange"
+        )
+        .through(sseEventToWikiEdit)
+        .through(broadcastHub.publish)
+        .compile
+        .drain
