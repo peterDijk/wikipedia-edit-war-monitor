@@ -7,13 +7,15 @@ set -e
 echo "🛑 Stopping Wikipedia Edit War Monitor services..."
 echo ""
 
-# Stop Jaeger
-echo "📊 Stopping Jaeger..."
+# Stop all services
+echo "📊 Stopping all services..."
 docker-compose down
 
 echo ""
 echo "✅ All services stopped"
 echo ""
-echo "To remove all data (including trace history):"
-echo "  docker-compose down -v"
+echo "Additional commands:"
+echo "  Remove all data (including traces):  docker-compose down -v"
+echo "  View stopped containers:             docker-compose ps -a"
+echo "  Remove built images:                 docker-compose down --rmi local"
 

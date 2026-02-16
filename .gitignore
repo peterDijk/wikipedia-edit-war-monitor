@@ -61,8 +61,6 @@ project/plugins/project/
 .scala_dependencies
 .lib/
 
-# Docker
-.dockerignore
 
 # Environment variables (if you create .env files)
 .env
