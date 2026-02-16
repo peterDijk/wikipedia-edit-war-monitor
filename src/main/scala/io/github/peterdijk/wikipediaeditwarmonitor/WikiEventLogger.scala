@@ -27,14 +27,10 @@ final case class WikiEventLogger[F[_]: Async](
       startTime <- Stream.eval(Async[F].monotonic)
       counterRef <- Stream.eval(Ref[F].of(0))
       _ <- stream.parEvalMap(10) { event =>
-        for {
-          currentTime <- Async[F].monotonic
-          count <- counterRef.updateAndGet(_ + 1)
-          elapsedTime = currentTime - startTime
-          _ <- Async[F].delay(
-            formatOutput(count, elapsedTime, event)
-          )
-        } yield ()
+        (Async[F].monotonic, counterRef.updateAndGet(_ + 1)).mapN {
+          (currentTime, count) =>
+            formatOutput(count, startTime - currentTime, event)
+        }
       }
     } yield ()
     log.compile.drain
