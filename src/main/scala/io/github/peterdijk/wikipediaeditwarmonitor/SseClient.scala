@@ -96,6 +96,7 @@ final class SseClient[F[_]] private (
       )
       .flatMap(_.body)
       .through(ServerSentEvent.decoder[F])
+      .filter(_.data.nonEmpty)
 }
 
 object SseClient {

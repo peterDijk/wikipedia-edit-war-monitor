@@ -8,14 +8,13 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
-import org.http4s.ServerSentEvent
 import fs2.concurrent.Topic
 
 object WikipediaEditWarMonitorServer:
 
   def run[F[_]: Async: Network]: F[Nothing] = {
     EmberClientBuilder.default[F].build.use { client =>
-      Topic[F, ServerSentEvent].flatMap { broadcastHub =>
+      Topic[F, WikiEdit].flatMap { broadcastHub =>
         val wikiStream = WikiStream.impl[F](client, broadcastHub)
         val wikiEventLogger = WikiEventLogger(broadcastHub)
 
