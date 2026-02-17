@@ -17,7 +17,6 @@ services:
     environment:
       # Set collector endpoint
       - COLLECTOR_OTLP_ENABLED=true
-      - OTEL_SERVICE_NAME=wikipedia-edit-war-monitor
     restart: unless-stopped
     networks:
       - tracing
