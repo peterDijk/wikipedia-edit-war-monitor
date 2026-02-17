@@ -21,7 +21,7 @@ object WikipediaEditWarMonitorServer:
     val resources = for {
       client <- EmberClientBuilder.default[F].build
       otel <- OtelJava.autoConfigured[F]()
-      tracer <- Resource.eval(otel.tracerProvider.get("WikipediaEditWarMonitor"))
+      tracer <- Resource.eval(otel.tracerProvider.get(sys.env.getOrElse("OTEL_SERVICE_NAME", "")))
       broadcastHub <- Resource.eval(Topic[F, TracedWikiEdit])
     } yield (client, tracer, broadcastHub)
 

@@ -64,7 +64,6 @@ project/plugins/project/
 # Docker
 .dockerignore
 
-# Environment variables (if you create .env files)
 .env
 .env.local
 .env.*.local

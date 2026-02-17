@@ -12,8 +12,7 @@ object WikiTypes {
       comment: String,
       serverName: String
   )
-  
-  // Wrapper to carry span context through Topic boundaries
+
   case class TracedWikiEdit(
       edit: WikiEdit,
       spanContext: SpanContext

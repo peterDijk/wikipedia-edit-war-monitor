@@ -40,8 +40,6 @@ object WikiStream:
       httpClient: Client[F],
       broadcastHub: Topic[F, TracedWikiEdit]
   )(using tracer: Tracer[F]): WikiStream[F] = new WikiStream[F]:
-    // ...existing code...
-
     def start: F[Unit] =
       val sseClient = SseClient(httpClient, None, 1.second)
       sseClient
