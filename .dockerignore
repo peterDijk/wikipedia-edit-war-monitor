@@ -41,10 +41,6 @@ logs/
 docs/
 README.md
 
-# Scripts
-start.sh
-stop.sh
-
 # Docker
 Dockerfile
 docker-compose.yml

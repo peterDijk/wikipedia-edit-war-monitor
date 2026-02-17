@@ -144,14 +144,14 @@ case class EditWarAlert(
 
 **Start everything with one command:**
 ```bash
-./start.sh
+make start
 ```
 
 This will:
 - Build the Scala application in Docker
 - Start Jaeger for distributed tracing
 - Start the application with tracing enabled
-- Show logs from both services
+- Wait for services to be ready
 
 **Access:**
 - 📊 **Jaeger UI:** http://localhost:16686 (view traces)
@@ -159,10 +159,19 @@ This will:
    - http://localhost:8080/hello/world
    - http://localhost:8080/joke
 
-**Stop:**
+**Other useful commands:**
 ```bash
-./stop.sh
+make help          # Show all available commands
+make stop          # Stop all services
+make logs          # View logs from all services
+make logs-app      # View application logs only
+make restart       # Restart the application
+make clean         # Remove all data including traces
 ```
+
+**Legacy scripts (still available):**
+- `./start.sh` - Same as `make start`
+- `./stop.sh` - Same as `make stop`
 
 ### Alternative: Local Development (SBT)
 
