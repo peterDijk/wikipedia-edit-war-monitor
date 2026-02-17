@@ -20,9 +20,13 @@ lazy val root = (project in file("."))
       "org.scalameta" %% "munit" % MunitVersion % Test,
       "org.typelevel" %% "munit-cats-effect" % MunitCatsEffectVersion % Test,
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
-      "org.fusesource.jansi" % "jansi" % JansiVersion
+      "org.fusesource.jansi" % "jansi" % JansiVersion,
+      "io.circe" %% "circe-core" % "0.14.5"
     ),
     testFrameworks += new TestFramework("munit.Framework"),
+    scalacOptions ++= Seq(
+      "-Wconf:msg=unused:s" // Silence all unused warnings (imports, values, params, etc.)
+    ),
     Compile / run / fork := true,
     // Enable color support in forked JVM
     Compile / run / javaOptions ++= Seq(
