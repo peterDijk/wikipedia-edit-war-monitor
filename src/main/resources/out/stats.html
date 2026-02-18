@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia edit war monitor</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f6f6f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        #mw-navigation {
+            width: 160px;
+            padding: 20px;
+            background-color: #f6f6f6;
+            border-right: 1px solid #a7d7f9;
+            font-size: 0.8em;
+        }
+        #content {
+            flex-grow: 1;
+            background-color: #ffffff;
+            border: 1px solid #a7d7f9;
+            border-right-width: 0;
+            margin-top: 10px;
+            padding: 20px 40px;
+        }
+        h1 {
+            font-family: 'Linux Libertine', 'Georgia', 'Times', serif;
+            font-size: 1.8em;
+            border-bottom: 1px solid #a2a9b1;
+            margin-bottom: 0.25em;
+            padding-bottom: 0.17em;
+        }
+        h2 {
+            font-family: 'Linux Libertine', 'Georgia', 'Times', serif;
+            font-size: 1.3em;
+            border-bottom: 1px solid #a2a9b1;
+            margin-bottom: 0.5em;
+            padding-bottom: 0.1em;
+        }
+        #siteSub {
+            font-size: 0.8em;
+            color: #54595d;
+            margin-bottom: 1em;
+        }
+        #bodyContent {
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .vector-menu-heading {
+            color: #54595d;
+            margin: 1em 0 0.5em;
+            font-weight: normal;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 0.3em;
+        }
+        a {
+            text-decoration: none;
+            color: #0645ad;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .wikicolumn {
+            float: left;
+            width: 33.33%;
+        }
+
+        .wikirow:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+<div id="mw-navigation">
+    <img src="https://en.wikipedia.org/static/images/project-logos/enwiki.png" alt="Wikipedia Logo" width="120">
+    <div class="vector-menu-heading">Navigation</div>
+    <ul>
+        <li><a href="#">Main page</a></li>
+        <li><a href="#">Contents</a></li>
+        <li><a href="#">Current events</a></li>
+        <li><a href="#">Random article</a></li>
+        <li><a href="#">About Wikipedia</a></li>
+        <li><a href="#">Contact us</a></li>
+        <li><a href="#">Donate</a></li>
+    </ul>
+</div>
+<div id="content">
+    <h1 id="firstHeading">Wikipedia edit war monitor</h1>
+    <div id="siteSub">Built by Peter Dijk, Steph Cattoir and Leon Weemen</div>
+    <div id="bodyContent">
+        <div class="wikirow">
+            <div class="wikicolumn usercounts"></div>
+            <div class="wikicolumn pagecounts"></div>
+            <div class="wikicolumn botratio"></div>
+        </div>
+    </div>
+</div>
+<script>
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+    const userCountsDiv = document.querySelector('.usercounts');
+    const pageCountsDiv = document.querySelector('.pagecounts');
+    const botRatioDiv = document.querySelector('.botratio');
+
+    let socket;
+
+    function connect() {
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => {
+            console.log('Connected to WebSocket');
+        };
+
+        socket.onmessage = (event) => {
+            const snapshot = JSON.parse(event.data);
+
+            // Update Users
+            const topUsers = Object.entries(snapshot.users)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 20);
+            userCountsDiv.innerHTML = '<h2>Top 20 Users</h2><ul>' +
+                topUsers.map(([user, count]) => `<li>${user}: ${count}</li>`).join('') +
+                '</ul>';
+
+            // Update Pages
+            const topTitles = Object.entries(snapshot.titles)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 20);
+            pageCountsDiv.innerHTML = '<h2>Top 20 Pages</h2><ul>' +
+                topTitles.map(([title, count]) => `<li>${title}: ${count}</li>`).join('') +
+                '</ul>';
+
+            // Update Bot Ratio
+            const botCount = snapshot.bots.true || 0;
+            const humanCount = snapshot.bots.false || 0;
+            botRatioDiv.innerHTML = '<h2>Bot Ratio</h2><ul>' +
+                `<li>Human: ${humanCount}</li>` +
+                `<li>Bot: ${botCount}</li>` +
+                '</ul>';
+        };
+
+        socket.onclose = () => {
+            console.log('Disconnected from WebSocket. Attempting to reconnect in 5 seconds...');
+            setTimeout(connect, 5000);
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+            socket.close();
+        };
+    }
+
+    connect();
+</script>
+</body>
+</html>

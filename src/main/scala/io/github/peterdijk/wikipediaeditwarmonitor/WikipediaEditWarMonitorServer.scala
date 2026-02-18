@@ -10,7 +10,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits.*
 import org.http4s.server.middleware.Logger
 import fs2.concurrent.Topic
-import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{TracedWikiEdit, WikiEdit}
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiCountsSnapshot, TracedWikiEdit, WikiEdit}
 import org.typelevel.otel4s.oteljava.OtelJava
 import org.typelevel.otel4s.trace.Tracer
 import io.github.peterdijk.wikipediaeditwarmonitor.middleware.HttpTracingMiddleware
@@ -31,9 +31,10 @@ object WikipediaEditWarMonitorServer:
       otel <- OtelJava.autoConfigured[F]()
       tracer <- Resource.eval(otel.tracerProvider.get(sys.env.getOrElse("OTEL_SERVICE_NAME", "")))
       broadcastHub <- Resource.eval(Topic[F, TracedWikiEdit])
-    } yield (client, tracer, broadcastHub)
+      broadcastHubWikiCount <- Resource.eval(Topic[F, WikiCountsSnapshot])
+    } yield (client, tracer, broadcastHub, broadcastHubWikiCount)
 
-    resources.use { case (client, tracer, broadcastHub) =>
+    resources.use { case (client, tracer, broadcastHub, broadcastHubWikiCount) =>
       given Tracer[F] = tracer
 
       // both use the same tracer instance, but different spans will be created in each
@@ -41,33 +42,32 @@ object WikipediaEditWarMonitorServer:
       // correlated via attributes if needed
       val wikiStream = WikiStream.impl[F](client, broadcastHub)
       val wikiEventLogger = WikiEventLogger(broadcastHub)
-      val statsConsumer = StatsConsumer(broadcastHub)
+      val statsConsumer = StatsConsumer(broadcastHub, broadcastHubWikiCount)
 
       val helloWorldAlg = HelloWorld.impl[F]
       val jokeAlg = Jokes.impl[F](client)
 
       for {
         outDir <- loadOutDir
-        routes =
-          WikipediaEditWarMonitorRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-            WikipediaEditWarMonitorRoutes.jokeRoutes[F](jokeAlg) <+>
-            WikipediaEditWarMonitorRoutes.staticFileRoutes[F](outDir, "/")
-
-        tracedRoutes = HttpTracingMiddleware[F](routes)
-
-        httpApp = tracedRoutes.orNotFound
-        // With Middlewares in place
-        finalHttpApp = Logger.httpApp(true, true)(httpApp)
-
-        // Start background fibers and HTTP server in parallel
         _ <- Async[F].start(wikiEventLogger.subscribeAndLog)
         _ <- Async[F].start(wikiStream.start)
         _ <- Async[F].start(statsConsumer.countEdits)
-        _ <- EmberServerBuilder
+
+        server <- EmberServerBuilder
           .default[F]
           .withHost(ipv4"0.0.0.0")
           .withPort(port"8080")
-          .withHttpApp(finalHttpApp)
+          .withHttpWebSocketApp { (wsb: org.http4s.server.websocket.WebSocketBuilder2[F]) =>
+            val routes =
+              WikipediaEditWarMonitorRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
+                WikipediaEditWarMonitorRoutes.jokeRoutes[F](jokeAlg) <+>
+                WikipediaEditWarMonitorRoutes.webSocketRoutes[F](wsb, broadcastHubWikiCount) <+>
+                WikipediaEditWarMonitorRoutes.staticFileRoutes[F](outDir, "/")
+
+            val tracedRoutes = HttpTracingMiddleware[F](routes)
+            val httpApp = tracedRoutes.orNotFound
+            Logger.httpApp(true, true)(httpApp)
+          }
           .build
           .useForever
       } yield ()

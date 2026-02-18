@@ -1,13 +1,20 @@
 package io.github.peterdijk.wikipediaeditwarmonitor
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.implicits.*
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import cats.effect.Async
 import org.http4s.server.staticcontent.fileService
 import org.http4s.server.staticcontent.FileService.Config
 import fs2.io.file.Files
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.server.websocket.WebSocketBuilder2
+import fs2.concurrent.Topic
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{TracedWikiEdit, WikiCountsSnapshot}
+import io.circe.syntax.*
+import org.http4s.circe.*
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiDecoder.given
 
 object WikipediaEditWarMonitorRoutes:
 
@@ -35,3 +42,17 @@ object WikipediaEditWarMonitorRoutes:
 
   def staticFileRoutes[F[_]: Async: Files](systemPath: String, urlPrefix: String): HttpRoutes[F] =
     fileService(Config(systemPath = systemPath, pathPrefix = urlPrefix))
+
+  def webSocketRoutes[F[_]: Async](
+      wsb: WebSocketBuilder2[F],
+      broadcastHub: Topic[F, WikiCountsSnapshot]
+  ): HttpRoutes[F] =
+    val dsl = new Http4sDsl[F] {}
+    import dsl.*
+    HttpRoutes.of[F] {
+      case GET -> Root / "ws" =>
+        val send = broadcastHub
+          .subscribe(100)
+          .map(event => WebSocketFrame.Text(event.asJson.noSpaces))
+        wsb.build(send, _.drain)
+    }
