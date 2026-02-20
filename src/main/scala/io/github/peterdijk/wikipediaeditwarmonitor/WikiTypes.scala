@@ -19,14 +19,14 @@ object WikiTypes {
       spanContext: SpanContext
   )
 
-//   case class WikiPage(
-//       title: String,
-//       title_url: String,
-//   )
+  case class WikiPage(
+      title: String,
+      title_url: String,
+  )
 
   case class WikiCountsSnapshot(
       users: Map[String, Int],
-      titles: Map[(String, String), Int],
+      titles: Map[WikiPage, Int],
       bots: Map[Boolean, Int]
   )
 }

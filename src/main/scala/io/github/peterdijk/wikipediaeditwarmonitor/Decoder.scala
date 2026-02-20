@@ -2,7 +2,7 @@ package io.github.peterdijk.wikipediaeditwarmonitor
 
 import io.circe.Decoder.Result
 import io.circe.{Decoder, Encoder, HCursor, Json}
-import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiEdit, WikiCountsSnapshot}
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiEdit, WikiCountsSnapshot, WikiPage}
 
 object WikiDecoder {
   given wikiEditDecoder: Decoder[WikiEdit] = new Decoder[WikiEdit] {
@@ -32,10 +32,10 @@ object WikiDecoder {
           "title_url" -> Json.fromString(title_url)
         )
 
-      def objFromPageMap(m: Map[(String, String), Int]): Json =
+      def objFromPageMap(m: Map[WikiPage, Int]): Json =
         Json.obj(m.toList.map {
-          case ((title, title_url), count) =>
-            (title, objFromPage(title_url, count))
+          case (wikiPage, count) =>
+            (wikiPage.title, objFromPage(wikiPage.title_url, count))
           }*)
 
       val botsJson = Json.obj(s.bots.toList.map { case (k, v) => (k.toString, Json.fromInt(v)) }*)
