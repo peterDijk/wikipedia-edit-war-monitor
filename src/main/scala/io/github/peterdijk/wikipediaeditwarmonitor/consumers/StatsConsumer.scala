@@ -66,4 +66,4 @@ final case class StatsConsumer[F[_]: Async: cats.Parallel: Files](
     ref.updateAndGet { counts =>
       val newCount = counts.getOrElse(key, 0) + 1
       counts + (key -> newCount)
-    }.flatMap(m => Async[F].delay(println(s"Current $label counts: $m")))
+    }.void

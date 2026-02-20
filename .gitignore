@@ -64,5 +64,3 @@ project/plugins/project/
 .env
 .env.local
 .env.*.local
-
-./src/main/resources/out/*
