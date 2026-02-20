@@ -2,7 +2,7 @@ package io.github.peterdijk.wikipediaeditwarmonitor.consumers
 import cats.effect.{Async, Ref}
 import com.typesafe.config.ConfigFactory
 import fs2.concurrent.Topic
-import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiCountsSnapshot, TracedWikiEdit}
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiCountsSnapshot, TracedWikiEdit, WikiPage}
 import cats.syntax.all.*
 
 import scala.concurrent.duration.*
@@ -26,11 +26,11 @@ final case class StatsConsumer[F[_]: Async: cats.Parallel: Files](
 
     for {
       userCountRef  <- Ref.of[F, Map[String, Int]](Map.empty)
-      titleCountRef <- Ref.of[F, Map[String, Int]](Map.empty)
+      titleCountRef <- Ref.of[F, Map[WikiPage, Int]](Map.empty)
       botCountRef   <- Ref.of[F, Map[Boolean, Int]](Map.empty)
 
       producer = Stream
-        .awakeEvery[F](5.seconds)
+        .awakeEvery[F](2.seconds)
         .evalMap { _ =>
           for {
             userCounts  <- userCountRef.get
@@ -51,18 +51,24 @@ final case class StatsConsumer[F[_]: Async: cats.Parallel: Files](
   def incrementCounts(
       event: TracedWikiEdit,
       userCountRef: Ref[F, Map[String, Int]],
-      titleCountRef: Ref[F, Map[String, Int]],
+      titleCountRef: Ref[F, Map[WikiPage, Int]],
       botCountRef: Ref[F, Map[Boolean, Int]]
   ): F[Unit] = {
     val suffix = if (event.edit.bot) then "Bot" else "Human"
     (
       incrementCount(s"${event.edit.user} ($suffix)", userCountRef, "user"),
-      incrementCount(event.edit.title, titleCountRef, "page"),
+      incrementTitlesCount(WikiPage(event.edit.title, event.edit.title_url), titleCountRef, "page"),
       incrementCount(event.edit.bot, botCountRef, "bot")
     ).parTupled.void
   }
 
   private def incrementCount[K](key: K, ref: Ref[F, Map[K, Int]], label: String): F[Unit] =
+    ref.updateAndGet { counts =>
+      val newCount = counts.getOrElse(key, 0) + 1
+      counts + (key -> newCount)
+    }.void
+
+  private def incrementTitlesCount[K](key: WikiPage, ref: Ref[F, Map[WikiPage, Int]], label: String): F[Unit] =
     ref.updateAndGet { counts =>
       val newCount = counts.getOrElse(key, 0) + 1
       counts + (key -> newCount)
