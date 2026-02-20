@@ -44,7 +44,6 @@ object WikipediaEditWarMonitorServer:
       val wikiEventLogger = WikiEventLogger(broadcastHub)
       val statsConsumer = StatsConsumer(broadcastHub, broadcastHubWikiCount)
 
-      val helloWorldAlg = HelloWorld.impl[F]
       val jokeAlg = Jokes.impl[F](client)
 
       for {
@@ -59,8 +58,7 @@ object WikipediaEditWarMonitorServer:
           .withPort(port"8080")
           .withHttpWebSocketApp { (wsb: org.http4s.server.websocket.WebSocketBuilder2[F]) =>
             val routes =
-              WikipediaEditWarMonitorRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-                WikipediaEditWarMonitorRoutes.jokeRoutes[F](jokeAlg) <+>
+                WikipediaEditWarMonitorRoutes.healthRoutes[F](jokeAlg) <+>
                 WikipediaEditWarMonitorRoutes.webSocketRoutes[F](wsb, broadcastHubWikiCount) <+>
                 WikipediaEditWarMonitorRoutes.staticFileRoutes[F](outDir, "/")
 
