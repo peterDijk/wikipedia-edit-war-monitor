@@ -19,7 +19,7 @@ class WikipediaEditWarMonitorRoutesSpec extends CatsEffectSuite:
     assertIO(retHelloWorld.flatMap(_.as[String]), "{\"joke\":\"Test joke\"}")
   }
 
-  private[this] val retHelloWorld: IO[Response[IO]] =
+  private[this] val retHealth: IO[Response[IO]] =
     val getHW = Request[IO](Method.GET, uri"/health")
     val mockJokes = new MockJokes("Test joke")
     WikipediaEditWarMonitorRoutes.healthRoutes(mockJokes).orNotFound(getHW)
