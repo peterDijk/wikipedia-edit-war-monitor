@@ -6,6 +6,7 @@ object WikiTypes {
   case class WikiEdit(
       id: String,
       title: String,
+      title_url: String,
       user: String,
       bot: Boolean,
       timestamp: Long,
@@ -18,9 +19,14 @@ object WikiTypes {
       spanContext: SpanContext
   )
 
+//   case class WikiPage(
+//       title: String,
+//       title_url: String,
+//   )
+
   case class WikiCountsSnapshot(
       users: Map[String, Int],
-      titles: Map[String, Int],
+      titles: Map[(String, String), Int],
       bots: Map[Boolean, Int]
   )
 }

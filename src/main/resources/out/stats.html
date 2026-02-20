@@ -137,10 +137,10 @@
 
             // Update Pages
             const topTitles = Object.entries(snapshot.titles)
-                .sort(([, a], [, b]) => b - a)
+                .sort(([, a], [, b]) => b.count - a.count)
                 .slice(0, 20);
             pageCountsDiv.innerHTML = '<h2>Top 20 Pages</h2><ul>' +
-                topTitles.map(([title, count]) => `<li>${title}: ${count}</li>`).join('') +
+                topTitles.map(([title, wikiPage]) => `<li><a href="${wikiPage.title_url}" target="_blank">${title}</a>: ${wikiPage.count}</li>`).join('') +
                 '</ul>';
 
             // Update Bot Ratio
