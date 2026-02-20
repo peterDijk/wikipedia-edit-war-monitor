@@ -42,9 +42,12 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_METRICS_EXPORTER=none
       - OTEL_LOGS_EXPORTER=none
+      - APP_OUTDIR=/app/out
     depends_on:
       jaeger:
         condition: service_healthy
+    volumes:
+      - ./src/main/resources/out:/app/out
     restart: unless-stopped
     networks:
       - tracing

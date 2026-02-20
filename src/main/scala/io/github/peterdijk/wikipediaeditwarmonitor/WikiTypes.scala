@@ -17,4 +17,10 @@ object WikiTypes {
       edit: WikiEdit,
       spanContext: SpanContext
   )
+
+  case class WikiCountsSnapshot(
+      users: Map[String, Int],
+      titles: Map[String, Int],
+      bots: Map[Boolean, Int]
+  )
 }
