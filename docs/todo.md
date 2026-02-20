@@ -1,0 +1,9 @@
+- [x] add page url as link to html
+- [ ] top20 sorted to backend
+- [ ] logging extra pipe
+- [ ] stats route
+- [ ] test coverage
+- [ ] tracing in logging to its own pipe
+- [ ] Edit War Detector
+  - [ ] how can we detect a revert?
+  - [ ] ...
