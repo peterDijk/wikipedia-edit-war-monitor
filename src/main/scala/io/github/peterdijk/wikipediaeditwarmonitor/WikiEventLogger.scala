@@ -14,7 +14,7 @@ final case class WikiEventLogger[F[_]: Async](
     broadcastHub: Topic[F, TracedWikiEdit]
 )(using tracer: Tracer[F]):
 
-  private def addTracers: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] = _.parEvalMap(10) { tracedEvent =>
+  private def addSpan: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] = _.parEvalMap(10) { tracedEvent =>
     tracer
       .spanBuilder("log_wiki_edit")
       .withParent(tracedEvent.spanContext)
@@ -57,7 +57,7 @@ final case class WikiEventLogger[F[_]: Async](
   def subscribeAndLog: F[Unit] =
     broadcastHub
       .subscribe(1000)
-      .through(addTracers)
+      .through(addSpan)
       .through(addStats)
       .through(printLogs)
       .compile
