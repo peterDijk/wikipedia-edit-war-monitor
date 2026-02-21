@@ -54,15 +54,11 @@ final case class WikiEventLogger[F[_]: Async](
     s"Event #$count | (elapsed: ${elapsedTime.toSeconds}s) | Average rate: ${count.toDouble / elapsedTime.toSeconds} events/s | WikiEdit: ${event.title} by ${event.user} at ${event.timestamp}"
   )
 
-  private def logWithStats: fs2.Pipe[F, TracedWikiEdit, Unit] =
-    addTracers andThen addStats andThen printLogs
-
   def subscribeAndLog: F[Unit] =
     broadcastHub
       .subscribe(1000)
-      .through(logWithStats)
-      // .through(addTracers)
-      // .through(addStats)
-      // .through(printLogs)
+      .through(addTracers)
+      .through(addStats)
+      .through(printLogs)
       .compile
       .drain
