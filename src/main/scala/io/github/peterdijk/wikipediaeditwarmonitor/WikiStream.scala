@@ -22,7 +22,7 @@ trait WikiStream[F[_]]:
 object WikiStream:
   def apply[F[_]](implicit evidence: WikiStream[F]): WikiStream[F] = evidence
 
-  def sseEventToWikiEdit[F[_]: Async]: fs2.Pipe[F, ServerSentEvent, WikiEdit] =
+  def sseEventToWikiEdit[F[_]: Async]: fs2.Pipe[F, ServerSentEvent, WikiEdit] = {
     (stream: fs2.Stream[F, ServerSentEvent]) =>
       stream.evalMap { sse =>
         val decoded = decode[WikiEdit](sse.data.mkString("\n"))
@@ -35,6 +35,11 @@ object WikiStream:
           )
         )
       }
+  }
+
+  def filterOnlyEdits[F[_]: Async]: fs2.Pipe[F, WikiEdit, WikiEdit] = {
+    _.filter(_.editType == EditType.edit)
+  }
 
   def impl[F[_]: Async](
       httpClient: Client[F],
@@ -47,6 +52,7 @@ object WikiStream:
           uri"https://stream.wikimedia.org/v2/stream/recentchange"
         )
         .through(sseEventToWikiEdit)
+        .through(filterOnlyEdits)
         .through(StreamTracingMiddleware[F])
         .through(broadcastHub.publish)
         .compile

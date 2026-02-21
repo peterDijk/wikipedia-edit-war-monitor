@@ -1,6 +1,7 @@
 - [x] add page url as link to html
-- [ ] top20 sorted to backend
 - [x] logging extra pipe
+- [x] filter stream to only process page `edits`
+- [ ] only top20 should be sent to frontend, and sorted by backend
 - [ ] stats route
 - [ ] test coverage
 - [ ] tracing in logging to its own pipe
