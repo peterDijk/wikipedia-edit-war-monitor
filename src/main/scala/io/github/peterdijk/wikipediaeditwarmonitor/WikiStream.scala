@@ -37,6 +37,10 @@ object WikiStream:
       }
   }
 
+  def filterOnlyEdits[F[_]: Async]: fs2.Pipe[F, WikiEdit, WikiEdit] = {
+    _.filter(_.editType == EditType.edit)
+  }
+
   def impl[F[_]: Async](
       httpClient: Client[F],
       broadcastHub: Topic[F, TracedWikiEdit]
@@ -48,6 +52,7 @@ object WikiStream:
           uri"https://stream.wikimedia.org/v2/stream/recentchange"
         )
         .through(sseEventToWikiEdit)
+        .through(filterOnlyEdits)
         .through(StreamTracingMiddleware[F])
         .through(broadcastHub.publish)
         .compile
