@@ -5,6 +5,8 @@ import fs2.concurrent.Topic
 import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{EditType, WikiRevertsSnapshot, TracedWikiEdit, WikiPage}
 import cats.syntax.all.*
 
+import scala.util.matching.Regex
+
 import scala.concurrent.duration.*
 import fs2.io.file.Files
 import fs2.Stream
@@ -66,14 +68,47 @@ final case class EditWarConsumer[F[_]: Async](
     _.filter(_.edit.editType == EditType.edit)
 
   def filterReverts[F[_]: Async]: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] = {
-    _.filter(_.edit.comment.toLowerCase.contains("revert"))
-    // val revertPatterns = List(
-    //   "revert".r,
-    //   "undid".r,
-    //   "revertides".r
-    //   // TODO: add more languages
-    // )
-    // _.filter { edit =>
-    //   revertPatterns.exists(_.findFirstIn(edit.edit.comment).isDefined)
-    // }
+    val revertKeywords = List(
+      // English
+      "revert", "undid", "undo", "rollback", "rv",
+      // Spanish
+      "deshacer",
+      // French
+      "annuler", "révocation", "rétablir", "annulé", "révoqué",
+      // German
+      "rückgängig", "zurücksetzen", "rückgängigmachen",
+      // Italian
+      "annullare", "ripristinare", "annullato", "ripristinato",
+      // Portuguese
+      "desfazer", "revertido", "desfeito",
+      // Dutch
+      "ongedaan", "herstellen", "terugdraaien", "ongedaan maken",
+      // Russian
+      "отменить", "откатить", "отмена", "откат",
+      // Polish
+      "cofnij", "przywróć", "cofnięcia", "przywrócenie",
+      // Swedish
+      "återställ", "ångra", "återställning",
+      // Norwegian
+      "tilbakestill", "angre", "tilbakestilling",
+      // Danish
+      "fortryd", "gendanne", "tilbagerulning",
+      // Finnish
+      "kumoa", "palauta", "kumoaminen", "palautus",
+      // Japanese
+      "差し戻し", "取り消し", "巻き戻し",
+      // Chinese (Simplified & Traditional)
+      "回退", "撤销", "恢复", "復原", "撤銷",
+      // Arabic
+      "تراجع", "إلغاء", "استرجاع",
+      // Hebrew
+      "ביטול", "החזרה", "שחזור",
+      // Korean
+      "되돌리기", "취소", "복구",
+      // Turkish
+      "geri al", "iptal", "geri alma"
+    ).mkString("|")
+
+    _.filter(x => revertKeywords.r.findFirstMatchIn(x.edit.comment.toLowerCase).isDefined)
   }
+
