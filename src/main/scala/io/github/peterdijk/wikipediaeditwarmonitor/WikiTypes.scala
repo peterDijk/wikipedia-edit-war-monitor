@@ -2,6 +2,13 @@ package io.github.peterdijk.wikipediaeditwarmonitor
 
 import org.typelevel.otel4s.trace.SpanContext
 
+enum EditType {
+  case `categorize`
+  case `edit`
+  case `log`
+  case `new`
+}
+
 object WikiTypes {
   case class WikiEdit(
       id: String,
@@ -11,7 +18,8 @@ object WikiTypes {
       bot: Boolean,
       timestamp: Long,
       comment: String,
-      serverName: String
+      serverName: String,
+      editType: EditType,
   )
 
   case class TracedWikiEdit(

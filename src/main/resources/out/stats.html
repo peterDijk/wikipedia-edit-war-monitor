@@ -98,7 +98,7 @@
 </div>
 <div id="content">
     <h1 id="firstHeading">Wikipedia edit war monitor</h1>
-    <div id="siteSub">Built by Peter Dijk, Steph Cattoir and Leon Weemen</div>
+    <div id="siteSub">Built by Peter van Dijk, Steph Cattoir and Leon Weemen</div>
     <div id="bodyContent">
         <div class="wikirow">
             <div class="wikicolumn usercounts"></div>
@@ -139,7 +139,7 @@
             const topTitles = Object.entries(snapshot.titles)
                 .sort(([, a], [, b]) => b.count - a.count)
                 .slice(0, 20);
-            pageCountsDiv.innerHTML = '<h2>Top 20 Pages</h2><ul>' +
+            pageCountsDiv.innerHTML = '<h2>Top 20 Edited Pages</h2><ul>' +
                 topTitles.map(([title, wikiPage]) => `<li><a href="${wikiPage.title_url}" target="_blank">${title}</a>: ${wikiPage.count}</li>`).join('') +
                 '</ul>';
 
