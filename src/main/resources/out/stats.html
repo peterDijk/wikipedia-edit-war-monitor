@@ -217,7 +217,7 @@
                     wikiPage.count > REVERT_THRESHOLD
                       ? ' class="high-revert"'
                       : "";
-                  return `<li${className}><a href="${wikiPage.title_url}" target="_blank">${wikiPage.title_url}</a>: ${wikiPage.count}</li>`;
+                  return `<li${className}><a href="${wikiPage.title_url}" target="_blank">${wikiPage.title_url.substring(0, 50)}</a>: ${wikiPage.count}</li>`;
                 })
                 .join("") +
               "</ul>";
