@@ -1,7 +1,7 @@
 package io.github.peterdijk.wikipediaeditwarmonitor
 
 import munit.FunSuite
-import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiEdit, TracedWikiEdit}
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiEdit, TracedWikiEdit, EditType}
 import org.typelevel.otel4s.trace.SpanContext
 
 class WikiTypesSimpleSpec extends FunSuite:
@@ -10,11 +10,13 @@ class WikiTypesSimpleSpec extends FunSuite:
     val edit = WikiEdit(
       id = "12345",
       title = "Test Article",
+      title_url = "https://en.wikipedia.org/wiki/Test_Article",
       user = "TestUser",
       bot = false,
       timestamp = 1638360000L,
       comment = "Added some content",
-      serverName = "en.wikipedia.org"
+      serverName = "en.wikipedia.org",
+      editType = EditType.edit
     )
 
     assertEquals(edit.id, "12345")
@@ -30,11 +32,13 @@ class WikiTypesSimpleSpec extends FunSuite:
     val edit = WikiEdit(
       id = "bot123",
       title = "Automated Edit",
+      title_url = "https://commons.wikimedia.org/wiki/Automated_Edit",
       user = "BotUser",
       bot = true,
       timestamp = 1638360001L,
       comment = "Automated cleanup",
-      serverName = "commons.wikimedia.org"
+      serverName = "commons.wikimedia.org",
+      editType = EditType.edit
     )
 
     assertEquals(edit.bot, true)
@@ -45,11 +49,13 @@ class WikiTypesSimpleSpec extends FunSuite:
     val edit = WikiEdit(
       id = "",
       title = "",
+      title_url = "",
       user = "",
       bot = false,
       timestamp = 0L,
       comment = "",
-      serverName = ""
+      serverName = "",
+      editType = EditType.edit
     )
 
     assertEquals(edit.id, "")
@@ -60,7 +66,7 @@ class WikiTypesSimpleSpec extends FunSuite:
   }
 
   test("TracedWikiEdit creates with WikiEdit and SpanContext") {
-    val edit = WikiEdit("1", "Title", "User", false, 123L, "Comment", "server")
+    val edit = WikiEdit("1", "Title", "http://title_url", "User", false, 123L, "Comment", "server", EditType.edit)
     val spanContext = SpanContext.invalid
     val tracedEdit = TracedWikiEdit(edit, spanContext)
 
@@ -69,7 +75,7 @@ class WikiTypesSimpleSpec extends FunSuite:
   }
 
   test("TracedWikiEdit allows access to nested WikiEdit fields") {
-    val edit = WikiEdit("nested-1", "Nested Title", "NestedUser", true, 456L, "Nested comment", "nested.server")
+    val edit = WikiEdit("nested-1", "Nested Title", "http://nested_url", "NestedUser", true, 456L, "Nested comment", "nested.server", EditType.edit)
     val tracedEdit = TracedWikiEdit(edit, SpanContext.invalid)
 
     assertEquals(tracedEdit.edit.id, "nested-1")
