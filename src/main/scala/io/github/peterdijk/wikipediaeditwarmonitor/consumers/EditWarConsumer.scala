@@ -74,8 +74,19 @@ final case class EditWarConsumer[F[_]: Async](
       counts + (key -> newCount)
     }.void
 
-  private def filterTypeEdit: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] =
-    _.filter(_.edit.editType == EditType.edit)
+  private[consumers] def filterTypeEdit: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] =
+    _.parEvalMapUnordered(10) { event =>
+      tracer
+        .spanBuilder("filter_type_edit")
+        .withParent(event.spanContext)
+        .addAttribute(Attribute("wiki.title", event.edit.title))
+        .addAttribute(Attribute("wiki.edit_type", event.edit.editType.toString))
+        .build
+        .use { span =>
+          val isEdit = event.edit.editType == EditType.edit
+          span.addAttribute(Attribute("wiki.is_edit", isEdit)).as(Option.when(isEdit)(event))
+        }
+    }.collect { case Some(event) => event }
 
   private val revertKeywordsRegex: Regex = List(
     // English
@@ -118,7 +129,7 @@ final case class EditWarConsumer[F[_]: Async](
     "geri al", "iptal", "geri alma"
   ).mkString("|").r
 
-  private def filterReverts: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] =
+  private[consumers] def filterReverts: fs2.Pipe[F, TracedWikiEdit, TracedWikiEdit] =
     _.parEvalMapUnordered(10) { event =>
       tracer
         .spanBuilder("filter_revert_check")

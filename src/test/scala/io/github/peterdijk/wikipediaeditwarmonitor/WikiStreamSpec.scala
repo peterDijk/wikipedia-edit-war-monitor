@@ -4,7 +4,7 @@ import cats.effect.IO
 import fs2.Stream
 import munit.CatsEffectSuite
 import org.http4s.ServerSentEvent
-import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiEdit, EditType}
 
 class WikiStreamSpec extends CatsEffectSuite:
 
@@ -21,11 +21,13 @@ class WikiStreamSpec extends CatsEffectSuite:
     val expected = WikiEdit(
       id = "a5ceba11-1c2c-4a2f-9d5d-a21114d936a9",
       title = "Category:Deletion requests February 2026",
+      title_url = "https://commons.wikimedia.org/wiki/Category:Deletion_requests_February_2026",
       user = "Günther Frager",
       bot = false,
       timestamp = 1771426452L,
       comment = "[[:File:Ensemble officiel de danses populaires de l'U.R.S.S. - btv1b106029063 (592 of 745).jpg]] added to category",
-      serverName = "commons.wikimedia.org"
+      serverName = "commons.wikimedia.org",
+      editType = EditType.categorize
     )
 
     assertIO(result, List(expected))

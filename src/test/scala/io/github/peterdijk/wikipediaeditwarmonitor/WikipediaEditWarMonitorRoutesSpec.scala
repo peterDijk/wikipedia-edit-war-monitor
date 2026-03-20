@@ -12,11 +12,11 @@ class MockJokes(jokeText: String) extends Jokes[IO]:
 class WikipediaEditWarMonitorRoutesSpec extends CatsEffectSuite:
 
   test("health endpoint returns status code 200") {
-    assertIO(retHelloWorld.map(_.status) ,Status.Ok)
+    assertIO(retHealth.map(_.status) ,Status.Ok)
   }
 
   test("health endpoint returns a joke") {
-    assertIO(retHelloWorld.flatMap(_.as[String]), "{\"joke\":\"Test joke\"}")
+    assertIO(retHealth.flatMap(_.as[String]), "{\"joke\":\"Test joke\"}")
   }
 
   private[this] val retHealth: IO[Response[IO]] =

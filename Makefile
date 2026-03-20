@@ -109,3 +109,20 @@ up: start ## Alias for start
 
 down: stop ## Alias for stop
 
+test: ## Run all tests
+	@echo "$(BLUE)🧪 Running tests...$(NC)"
+	@sbt test
+	@echo "$(GREEN)✅ Tests complete$(NC)"
+
+coverage: ## Run tests with coverage report (HTML report in target/scala-3.3.7/scoverage-report/)
+	@echo "$(BLUE)📊 Running tests with coverage...$(NC)"
+	@sbt clean coverage test coverageReport
+	@echo ""
+	@echo "$(GREEN)✅ Coverage report generated$(NC)"
+	@echo "$(BLUE)📄 HTML report:     target/scala-3.3.7/scoverage-report/index.html$(NC)"
+	@echo "$(BLUE)📄 XML report:      target/scala-3.3.7/scoverage-report/scoverage.xml$(NC)"
+	@echo "$(BLUE)📄 Cobertura report: target/scala-3.3.7/coverage-report/cobertura.xml$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Opening HTML report...$(NC)"
+	@open target/scala-3.3.7/scoverage-report/index.html 2>/dev/null || true
+

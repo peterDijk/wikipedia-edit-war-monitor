@@ -1,7 +1,7 @@
 package io.github.peterdijk.wikipediaeditwarmonitor
 
 import io.circe.jawn.decode
-import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.WikiEdit
+import io.github.peterdijk.wikipediaeditwarmonitor.WikiTypes.{WikiEdit, EditType}
 import munit.FunSuite
 
 import WikiDecoder.given
@@ -14,6 +14,8 @@ class WikiDecoderSimpleSpec extends FunSuite:
         "id": "simple-123"
       },
       "title": "Simple Article",
+      "title_url": "https://simple.wikipedia.org/wiki/Simple_Article",
+      "type": "edit",
       "user": "SimpleUser",
       "bot": false,
       "timestamp": 1640995200,
@@ -25,11 +27,13 @@ class WikiDecoderSimpleSpec extends FunSuite:
     val expected = WikiEdit(
       id = "simple-123",
       title = "Simple Article",
+      title_url = "https://simple.wikipedia.org/wiki/Simple_Article",
       user = "SimpleUser",
       bot = false,
       timestamp = 1640995200L,
       comment = "Simple edit",
-      serverName = "simple.wikipedia.org"
+      serverName = "simple.wikipedia.org",
+      editType = EditType.edit
     )
 
     assertEquals(result, Right(expected))
@@ -39,6 +43,8 @@ class WikiDecoderSimpleSpec extends FunSuite:
     val json = """{
       "meta": {"id": "bot-456"},
       "title": "Bot Edit",
+      "title_url": "https://en.wikipedia.org/wiki/Bot_Edit",
+      "type": "edit",
       "user": "AutoBot",
       "bot": true,
       "timestamp": 1640995300,
@@ -60,6 +66,8 @@ class WikiDecoderSimpleSpec extends FunSuite:
     val json = """{
       "meta": {"id": ""},
       "title": "",
+      "title_url": "",
+      "type": "edit",
       "user": "",
       "bot": false,
       "timestamp": 0,
@@ -77,6 +85,8 @@ class WikiDecoderSimpleSpec extends FunSuite:
   test("WikiDecoder fails on missing required fields") {
     val jsonMissingTitle = """{
       "meta": {"id": "missing-title"},
+      "title_url": "https://test.org/wiki/Missing",
+      "type": "edit",
       "user": "User",
       "bot": false,
       "timestamp": 1640995500,
@@ -92,6 +102,8 @@ class WikiDecoderSimpleSpec extends FunSuite:
     val jsonWrongTypes = """{
       "meta": {"id": "type-test"},
       "title": "Title",
+      "title_url": "https://test.org/wiki/Title",
+      "type": "edit",
       "user": "User",
       "bot": "not-a-boolean",
       "timestamp": 1640995700,
@@ -107,6 +119,8 @@ class WikiDecoderSimpleSpec extends FunSuite:
     val jsonWithExtras = """{
       "meta": {"id": "extra-fields"},
       "title": "Extra Fields Test",
+      "title_url": "https://extra.org/wiki/Extra_Fields_Test",
+      "type": "edit",
       "user": "ExtraUser",
       "bot": false,
       "timestamp": 1640995900,
@@ -121,11 +135,13 @@ class WikiDecoderSimpleSpec extends FunSuite:
     val expected = WikiEdit(
       id = "extra-fields",
       title = "Extra Fields Test",
+      title_url = "https://extra.org/wiki/Extra_Fields_Test",
       user = "ExtraUser",
       bot = false,
       timestamp = 1640995900L,
       comment = "Has extra fields",
-      serverName = "extra.org"
+      serverName = "extra.org",
+      editType = EditType.edit
     )
 
     assertEquals(result, Right(expected))

@@ -59,5 +59,9 @@ lazy val root = (project in file("."))
     ),
     // Preserve stdin/stdout for colors and configure output
     Compile / run / connectInput := true,
-    Compile / run / outputStrategy := Some(StdoutOutput)
+    Compile / run / outputStrategy := Some(StdoutOutput),
+    // Coverage settings
+    coverageMinimumStmtTotal := 20,
+    coverageFailOnMinimum := false,
+    coverageHighlighting := true
   )
